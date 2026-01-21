@@ -1,0 +1,37 @@
+[
+  {
+    "label": "Pet Health",
+    "dropdown": [
+      "Dogs",
+      "Cats",
+      "Small Mammals"
+    ]
+  },
+  {
+    "label": "Poultry Health",
+    "dropdown": [
+      "Chickens",
+      "Ducks",
+      "Turkeys",
+      "Disease Management"
+    ]
+  },
+  {
+    "label": "Nutrition",
+    "dropdown": [
+      "Pet Nutrition",
+      "Poultry Nutrition"
+    ]
+  },
+  {
+    "label": "Research & Journals",
+    "dropdown": []
+  },
+  {
+    "label": "Resources",
+    "dropdown": [
+      "Vet Finder",
+      "Drug Index"
+    ]
+  }
+]

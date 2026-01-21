@@ -1,0 +1,23 @@
+[
+  {
+    "tag": "Featured Article",
+    "title": "The Ultimate Guide to Chicken Coop Hygiene",
+    "excerpt": "Learn essential biosecurity practices and cleaning protocols to keep your flock healthy and productive year-round.",
+    "image": "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=800&h=500&fit=crop",
+    "readTime": "5 min read"
+  },
+  {
+    "tag": "Latest Research",
+    "title": "Latest Research on Canine Parvovirus Prevention",
+    "excerpt": "New studies reveal breakthrough vaccination protocols that could significantly reduce parvovirus cases in puppies.",
+    "image": "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=500&fit=crop",
+    "readTime": "7 min read"
+  },
+  {
+    "tag": "Pet Nutrition",
+    "title": "Understanding Your Cat's Nutritional Needs",
+    "excerpt": "Expert veterinarians share insights on optimal feline nutrition for every life stage.",
+    "image": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&h=500&fit=crop",
+    "readTime": "6 min read"
+  }
+]

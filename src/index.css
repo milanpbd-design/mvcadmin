@@ -1,0 +1,305 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: 'Open Sans', sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.hero-slider {
+  transition: opacity 0.5s ease-in-out;
+}
+
+.expert-carousel {
+  scroll-behavior: smooth;
+}
+
+.category-carousel {
+  scroll-behavior: smooth;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+}
+
+.article-card:hover {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.admin-panel {
+  backdrop-filter: blur(5px);
+}
+
+/* Scrollbar Styling */
+.admin-sidebar {
+  scrollbar-width: thin;
+}
+
+.admin-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.dark .admin-sidebar::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+/* Animations and Utilities */
+.tab-active {
+  background: #1e40af;
+  color: white;
+}
+
+.editable-item:hover {
+  background: #f1f5f9;
+}
+
+/* Toast Animations */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* Smooth transitions for admin components */
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Page transition animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+@keyframes pulse-slow {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg,
+      #f3f4f6 0%,
+      #e5e7eb 50%,
+      #f3f4f6 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.dark .animate-shimmer {
+  background: linear-gradient(90deg,
+      #1f2937 0%,
+      #374151 50%,
+      #1f2937 100%);
+}
+
+/* Hover lift effect */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+/* Focus ring for accessibility */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Bounce animation for notifications */
+@keyframes bounce-in {
+  0% {
+    transform: scale(0) translateY(100%);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.05) translateY(0);
+  }
+
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* React Quill Dark Mode Overrides */
+.dark .ql-toolbar {
+  background-color: #1f2937;
+  /* gray-800 */
+  border-color: #374151 !important;
+  /* gray-700 */
+}
+
+.dark .ql-container {
+  background-color: #1f2937;
+  /* gray-800 */
+  border-color: #374151 !important;
+  /* gray-700 */
+  color: #f3f4f6;
+  /* gray-100 */
+}
+
+/* Icons (Stroke) */
+.dark .ql-snow .ql-stroke {
+  stroke: #9ca3af;
+  /* gray-400 */
+}
+
+.dark .ql-snow .ql-fill,
+.dark .ql-snow .ql-stroke.ql-fill {
+  fill: #9ca3af;
+  /* gray-400 */
+}
+
+/* Hover states for icons */
+.dark .ql-snow .ql-picker:hover .ql-picker-label,
+.dark .ql-snow .ql-picker-label:hover,
+.dark .ql-snow .ql-picker-item:hover,
+.dark .ql-snow .ql-picker-label.ql-active,
+.dark .ql-snow .ql-picker-item.ql-selected {
+  color: #60a5fa;
+  /* blue-400 */
+}
+
+.dark .ql-snow .ql-picker:hover .ql-picker-label .ql-stroke,
+.dark .ql-snow .ql-picker-label:hover .ql-stroke,
+.dark .ql-snow .ql-picker-item:hover .ql-stroke,
+.dark .ql-snow .ql-picker-label.ql-active .ql-stroke,
+.dark .ql-snow .ql-picker-item.ql-selected .ql-stroke,
+.dark .ql-snow button:hover .ql-stroke,
+.dark .ql-snow button.ql-active .ql-stroke,
+.dark .ql-snow .ql-picker-label:hover .ql-stroke.ql-fill,
+.dark .ql-snow .ql-picker-item:hover .ql-stroke.ql-fill,
+.dark .ql-snow .ql-picker-label.ql-active .ql-stroke.ql-fill,
+.dark .ql-snow .ql-picker-item.ql-selected .ql-stroke.ql-fill,
+.dark .ql-snow button:hover .ql-stroke.ql-fill,
+.dark .ql-snow button.ql-active .ql-stroke.ql-fill {
+  stroke: #60a5fa;
+  /* blue-400 */
+}
+
+.dark .ql-snow .ql-picker:hover .ql-picker-label .ql-fill,
+.dark .ql-snow .ql-picker-label:hover .ql-fill,
+.dark .ql-snow .ql-picker-item:hover .ql-fill,
+.dark .ql-snow .ql-picker-label.ql-active .ql-fill,
+.dark .ql-snow .ql-picker-item.ql-selected .ql-fill,
+.dark .ql-snow button:hover .ql-fill,
+.dark .ql-snow button.ql-active .ql-fill {
+  fill: #60a5fa;
+  /* blue-400 */
+}
+
+/* Picker Label Color */
+.dark .ql-snow .ql-picker-label {
+  color: #9ca3af;
+  /* gray-400 */
+}
+
+/* Dropdowns options */
+.dark .ql-snow .ql-picker-options {
+  background-color: #1f2937;
+  /* gray-800 */
+  border-color: #374151;
+  /* gray-700 */
+}
