@@ -10,6 +10,7 @@
     "@testing-library/user-event": "^13.5.0",
     "autoprefixer": "^10.4.23",
     "bcryptjs": "^3.0.3",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
@@ -29,8 +30,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "cross-env BUILD_PATH=.dist react-scripts build",
-    "build:custom": "cross-env BUILD_PATH=.dist react-scripts build",
+    "build": "cross-env BUILD_PATH=.dist node node_modules/react-scripts/bin/react-scripts.js build",
+    "build:custom": "cross-env BUILD_PATH=.dist node node_modules/react-scripts/bin/react-scripts.js build",
     "start:prod": "cross-env NODE_ENV=production node server/index.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -55,7 +56,6 @@
     ]
   },
   "devDependencies": {
-    "cross-env": "^10.1.0",
     "http-proxy-middleware": "^3.0.5"
   }
 }
