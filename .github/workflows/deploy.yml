@@ -37,3 +37,11 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./.dist/
           server-dir: domains/myvetcorner.com/public_html/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/*.md
+            **/package*.json
+            **/server.js
+            **/server/**
