@@ -23,11 +23,11 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      - name: Build application
+      - name: Build frontend
         run: npm run build
         env:
           CI: false
-          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+          NODE_ENV: production
       
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -35,13 +35,15 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./.dist/
-          server-dir: domains/myvetcorner.com/public_html/
+          local-dir: ./
+          server-dir: /domains/myvetcorner.com/public_html/
           exclude: |
             **/.git*
             **/.git*/**
             **/node_modules/**
-            **/*.md
-            **/package*.json
-            **/server.js
-            **/server/**
+            **/.env
+            **/.dist /**
+            **/artifacts/**
+            **/.gemini/**
+            **/README.md
+            **/DEPLOYMENT.md
