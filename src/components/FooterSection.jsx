@@ -13,7 +13,11 @@ export default function FooterSection({ siteName, footer }) {
     if (p?.slug) return `/pages/${p.slug}`;
     return footerLinkToPath(name);
   }
-  const socialLinks = siteData?.footer?.socialLinks || footer.socialLinks || [];
+  const socialLinks = Array.isArray(siteData?.footer?.socialLinks)
+    ? siteData.footer.socialLinks
+    : Array.isArray(footer?.socialLinks)
+      ? footer.socialLinks
+      : [];
 
   const getIcon = (platform) => {
     switch (platform.toLowerCase()) {
