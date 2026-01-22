@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'public/content/**'  # Trigger on content changes
-      - 'src/**'
-      - 'package.json'
   workflow_dispatch:
 
 jobs:
