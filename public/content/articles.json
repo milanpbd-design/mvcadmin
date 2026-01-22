@@ -1,0 +1,32 @@
+[
+  {
+    "image": "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=400&fit=crop",
+    "category": "Dog Health",
+    "categoryColor": "blue",
+    "title": "Latest Research on Canine Parvovirus Prevention",
+    "excerpt": "New studies reveal breakthrough vaccination protocols that could significantly reduce parvovirus cases in puppies.",
+    "date": "Dec 15, 2024",
+    "readTime": "7 min read",
+    "published": true
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1569396116180-210c182bedb8?w=600&h=400&fit=crop",
+    "category": "Poultry Nutrition",
+    "categoryColor": "green",
+    "title": "Optimal Layer Feed Formulations for Maximum Egg Production",
+    "excerpt": "Expert nutritionists share their recommended calcium and protein ratios for healthy laying hens.",
+    "date": "Dec 14, 2024",
+    "readTime": "5 min read",
+    "published": true
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&h=400&fit=crop",
+    "category": "Cat Care",
+    "categoryColor": "purple",
+    "title": "Understanding Feline Kidney Disease: Early Detection Signs",
+    "excerpt": "Recognize the subtle symptoms of CKD in cats and learn preventive care strategies from veterinary experts.",
+    "date": "Dec 13, 2024",
+    "readTime": "6 min read",
+    "published": true
+  }
+]

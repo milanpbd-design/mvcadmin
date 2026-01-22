@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'public/content/**'  # Trigger on content changes
+      - 'src/**'
+      - 'package.json'
   workflow_dispatch:
 
 jobs:
@@ -21,7 +25,7 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       
       - name: Build frontend
         run: npm run build
@@ -35,15 +39,12 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
+          local-dir: .dist/  # Deploy only the built files
           server-dir: /domains/myvetcorner.com/public_html/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/.env
-            **/.dist /**
-            **/artifacts/**
-            **/.gemini/**
-            **/README.md
-            **/DEPLOYMENT.md
+          dangerous-clean-slate: false  # Don't delete existing files
+      
+      - name: Deployment complete
+        run: |
+          echo "✅ Deployment successful!"
+          echo "📦 Deployed .dist folder to Hostinger"
+

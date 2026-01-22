@@ -1,0 +1,153 @@
+{
+  "site": {
+    "name": "My Vet Corner",
+    "tagline": "Expert Pet & Poultry Health Resources",
+    "description": "Your trusted source for expert veterinary information on pets and poultry."
+  },
+  "adminPassword": "Master@47",
+  "stats": [
+    {
+      "value": "500+",
+      "label": "Vet-Reviewed Articles",
+      "icon": "shield"
+    },
+    {
+      "value": "Latest",
+      "label": "Poultry Research",
+      "icon": "book"
+    },
+    {
+      "value": "50,000+",
+      "label": "Trusted Owners",
+      "icon": "users"
+    },
+    {
+      "value": "Expert",
+      "label": "Medical Board",
+      "icon": "lab"
+    }
+  ],
+  "navigation": [
+    {
+      "label": "Pet Health",
+      "dropdown": [
+        "Dogs",
+        "Cats",
+        "Small Mammals"
+      ]
+    },
+    {
+      "label": "Poultry Health",
+      "dropdown": [
+        "Chickens",
+        "Ducks",
+        "Turkeys",
+        "Disease Management"
+      ]
+    },
+    {
+      "label": "Nutrition",
+      "dropdown": [
+        "Pet Nutrition",
+        "Poultry Nutrition"
+      ]
+    },
+    {
+      "label": "Research & Journals",
+      "dropdown": []
+    },
+    {
+      "label": "Resources",
+      "dropdown": [
+        "Vet Finder",
+        "Drug Index"
+      ]
+    }
+  ],
+  "newsletter": {
+    "title": "Stay Updated",
+    "subtitle": "Get the latest vet-reviewed pet and poultry health articles delivered to your inbox weekly.",
+    "buttonText": "Subscribe Now",
+    "footerText": "Join 50,000+ pet and poultry owners. Unsubscribe anytime."
+  },
+  "footer": {
+    "description": "Your trusted source for expert veterinary information on pets and poultry.",
+    "socialLinks": [
+      {
+        "platform": "Twitter",
+        "url": "#"
+      },
+      {
+        "platform": "Facebook",
+        "url": "#"
+      },
+      {
+        "platform": "Instagram",
+        "url": "#"
+      }
+    ],
+    "quickLinks": [
+      "Pet Health",
+      "Poultry Health",
+      "Nutrition Guides",
+      "Research & Journals",
+      "Vet Finder"
+    ],
+    "companyLinks": [
+      "About Us",
+      "Editorial Policy",
+      "Medical Review Board",
+      "Contact Us",
+      "Careers"
+    ],
+    "legalLinks": [
+      "Privacy Policy",
+      "Terms of Service",
+      "Cookie Policy",
+      "Disclaimer"
+    ],
+    "copyright": "© 2024 My Vet Corner. All rights reserved.",
+    "disclaimerText": "Content is for informational purposes only and does not replace professional veterinary advice."
+  },
+  "theme": {
+    "primary": "#1e40af",
+    "secondary": "#374151",
+    "radius": 12
+  },
+  "settings": {
+    "injectScript": ""
+  },
+  "integrations": {
+    "gaId": "",
+    "fbPixel": ""
+  },
+  "security": {
+    "twoFARequired": false
+  },
+  "performance": {
+    "lazyImages": true,
+    "prefetchRoutes": false
+  },
+  "homeLayout": [
+    "hero",
+    "stats",
+    "articles",
+    "experts",
+    "categories",
+    "research",
+    "newsletter",
+    "footer"
+  ],
+  "tags": [
+    "health",
+    "nutrition",
+    "research"
+  ],
+  "locales": [
+    "en"
+  ],
+  "defaultLocale": "en",
+  "translations": {},
+  "versions": [],
+  "logs": []
+}

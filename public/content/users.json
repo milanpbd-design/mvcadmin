@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Admin",
+    "email": "admin@example.com",
+    "role": "admin",
+    "twoFA": false
+  }
+]
