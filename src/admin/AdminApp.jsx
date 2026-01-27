@@ -4,7 +4,6 @@ import { useSiteData } from '../context/SiteDataContext';
 import { useTheme } from '../context/ThemeContext';
 import { ToastProvider } from './components/Toast';
 import Breadcrumbs from './components/Breadcrumbs';
-import { apiSaveSite } from '../utils/api';
 
 // Import all admin components
 import AdminDashboard from './AdminDashboard';
@@ -25,14 +24,15 @@ export default function AdminApp() {
   const { darkMode, toggleTheme } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
   const location = useLocation();
 
-  // Auto-set dummy token for auth (always reset to ensure no old invalid tokens)
+  // Auto-set admin token for auth
   useEffect(() => {
-    localStorage.setItem('adminToken', 'dummy-token');
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      localStorage.setItem('adminToken', 'static-admin-token');
+    }
   }, []);
-
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -40,28 +40,9 @@ export default function AdminApp() {
   }, [location]);
 
   function saveAll() {
-    const token = localStorage.getItem('adminToken') || 'dummy-token';
-    if (!siteData) {
-      alert('No data to save');
-      return;
-    }
-
-    setSaving(true);
-    apiSaveSite(siteData, token)
-      .then(success => {
-        if (success) {
-          alert('All changes saved successfully!');
-        } else {
-          alert('Error saving changes. Please try again.');
-        }
-      })
-      .catch(err => {
-        console.error('Save error:', err);
-        alert('Error saving changes: ' + (err.message || 'Unknown error'));
-      })
-      .finally(() => {
-        setSaving(false);
-      });
+    // Data is automatically saved to localStorage by SiteDataContext
+    // This button just provides user feedback
+    alert('✅ All changes are automatically saved to your browser!\n\nNote: Changes are stored in localStorage and will persist on this browser. To make changes permanent across all users, you need to export the data and commit it to your repository.');
   }
 
   const navItems = [
@@ -232,19 +213,11 @@ export default function AdminApp() {
               onClick={saveAll}
               className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
             >
-              {saving ? (
-                <svg className="w-5 h-5 mx-auto animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              {!isCollapsed && 'View Save Info'}
+              {isCollapsed && (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-              ) : (
-                <>
-                  {!isCollapsed && 'Save All Changes'}
-                  {isCollapsed && (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </>
               )}
             </button>
           </div>
@@ -287,7 +260,7 @@ export default function AdminApp() {
               </nav>
               <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                 <button onClick={saveAll} className="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium hover:bg-green-700 transition">
-                  Save All Changes
+                  Save Info
                 </button>
               </div>
             </aside>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useSiteData } from '../context/SiteDataContext';
-import { apiSearchCategories } from '../utils/api';
 import Card, { CardHeader, CardBody } from './components/Card';
 import Button from './components/Button';
 import Modal from './components/Modal';
@@ -9,27 +8,11 @@ import { useToast } from './components/Toast';
 export default function CategoryHeroManager() {
     const { siteData, setSiteData } = useSiteData() || {};
     const toast = useToast();
-    const [allCategories, setAllCategories] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [editModal, setEditModal] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [imageUrl, setImageUrl] = useState('');
 
-    useEffect(() => {
-        loadCategories();
-    }, []);
-
-    async function loadCategories() {
-        setLoading(true);
-        try {
-            const res = await apiSearchCategories({ limit: 100 });
-            setAllCategories(res.items || []);
-        } catch (err) {
-            toast.error('Failed to load categories');
-        } finally {
-            setLoading(false);
-        }
-    }
+    const allCategories = siteData?.categories || [];
 
     function openEdit(category) {
         setSelectedCategory(category);
@@ -50,15 +33,6 @@ export default function CategoryHeroManager() {
             )
         }));
 
-        // Update in allCategories
-        setAllCategories(cats =>
-            cats.map(c =>
-                (c._id || c.id) === (selectedCategory._id || selectedCategory.id)
-                    ? { ...c, image: imageUrl }
-                    : c
-            )
-        );
-
         toast.success('Hero image updated!');
         setEditModal(false);
     }
@@ -66,17 +40,6 @@ export default function CategoryHeroManager() {
     function removeImage() {
         setImageUrl('');
         toast.info('Image URL cleared');
-    }
-
-    if (loading) {
-        return (
-            <Card>
-                <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-500 dark:text-gray-400">Loading categories...</p>
-                </div>
-            </Card>
-        );
     }
 
     return (

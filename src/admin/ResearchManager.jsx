@@ -6,16 +6,13 @@ import Card, { CardHeader, CardBody } from './components/Card';
 import Button from './components/Button';
 import { ConfirmModal } from './components/Modal';
 import { useToast } from './components/Toast';
-import GitHubService from './GitHubService';
 
 export default function ResearchManager() {
     const { siteData, setSiteData } = useSiteData() || {};
     const toast = useToast();
     const [deleteModal, setDeleteModal] = useState(false);
     const [deleteIndex, setDeleteIndex] = useState(null);
-    const [uploadingPdf, setUploadingPdf] = useState({});
     const [expandedContent, setExpandedContent] = useState({});
-    const [publishing, setPublishing] = useState(false);
 
     const research = siteData?.research || [];
 
@@ -32,7 +29,6 @@ export default function ResearchManager() {
                 abstract: '',
                 content: '',
                 pdfUrl: '',
-                pdfFilename: '',
                 _id: String(Date.now())
             }, ...(d.research || [])]
         }));
@@ -44,67 +40,6 @@ export default function ResearchManager() {
             ...d,
             research: d.research.map((item, idx) => idx === i ? { ...item, [field]: value } : item)
         }));
-    }
-
-    async function uploadPdf(i, file) {
-        if (!file) return;
-
-        const item = research[i];
-        const formData = new FormData();
-        formData.append('pdf', file);
-
-        setUploadingPdf(prev => ({ ...prev, [i]: true }));
-
-        try {
-            const token = localStorage.getItem('adminToken') || '';
-            const response = await fetch(`http://localhost:5000/api/research/${item._id}/upload-pdf`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error('Upload failed');
-            }
-
-            const data = await response.json();
-            updateResearch(i, 'pdfUrl', data.pdfUrl);
-            updateResearch(i, 'pdfFilename', data.filename);
-            toast.success('PDF uploaded successfully!');
-        } catch (err) {
-            console.error('Upload error:', err);
-            toast.error('Failed to upload PDF: ' + err.message);
-        } finally {
-            setUploadingPdf(prev => ({ ...prev, [i]: false }));
-        }
-    }
-
-    async function deletePdf(i) {
-        const item = research[i];
-        if (!item.pdfFilename) return;
-
-        try {
-            const token = localStorage.getItem('adminToken') || '';
-            const response = await fetch(`http://localhost:5000/api/research/${item._id}/delete-pdf?filename=${item.pdfFilename}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Delete failed');
-            }
-
-            updateResearch(i, 'pdfUrl', '');
-            updateResearch(i, 'pdfFilename', '');
-            toast.success('PDF deleted');
-        } catch (err) {
-            console.error('Delete error:', err);
-            toast.error('Failed to delete PDF: ' + err.message);
-        }
     }
 
     function confirmDelete(i) {
@@ -125,31 +60,6 @@ export default function ResearchManager() {
         setExpandedContent(prev => ({ ...prev, [i]: !prev[i] }));
     }
 
-    async function publishToGitHub() {
-        setPublishing(true);
-
-        try {
-            const token = localStorage.getItem('github_token');
-            const owner = localStorage.getItem('github_owner');
-            const repo = localStorage.getItem('github_repo');
-
-            if (!token || !owner) {
-                toast.error('Please configure GitHub settings first');
-                return;
-            }
-
-            const github = new GitHubService(token, owner, repo);
-            await github.updateResearch(siteData.research);
-
-            toast.success('✅ Published to GitHub! Site will rebuild automatically.');
-        } catch (error) {
-            console.error('Publish error:', error);
-            toast.error('Failed to publish: ' + error.message);
-        } finally {
-            setPublishing(false);
-        }
-    }
-
     const typeOptions = ['Peer Reviewed', 'Clinical Study', 'Case Report', 'Meta-Analysis', 'Review'];
     const colorOptions = ['blue', 'green', 'purple', 'red', 'orange'];
 
@@ -160,27 +70,13 @@ export default function ResearchManager() {
                     title="Research & Journals"
                     subtitle={`${research.length} publications`}
                     action={
-                        <div className="flex gap-2">
-                            <Button onClick={addResearch} icon={
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                </svg>
-                            }>
-                                Add Paper
-                            </Button>
-                            <Button
-                                onClick={publishToGitHub}
-                                disabled={publishing}
-                                variant="primary"
-                                icon={
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                    </svg>
-                                }
-                            >
-                                {publishing ? 'Publishing...' : '🚀 Publish'}
-                            </Button>
-                        </div>
+                        <Button onClick={addResearch} icon={
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                        }>
+                            Add Paper
+                        </Button>
                     }
                 />
             </Card>
@@ -233,7 +129,7 @@ export default function ResearchManager() {
                                                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                     <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
                                                 </svg>
-                                                PDF Attached
+                                                PDF Linked
                                             </span>
                                         )}
                                     </div>
@@ -329,52 +225,35 @@ export default function ResearchManager() {
                                         )}
                                     </div>
 
-                                    {/* PDF Upload Section */}
+                                    {/* PDF URL Section */}
                                     <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            📄 Research Paper PDF
+                                            📄 Research Paper PDF URL
                                         </label>
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex-1">
-                                                <input
-                                                    type="file"
-                                                    accept=".pdf"
-                                                    onChange={e => uploadPdf(i, e.target.files[0])}
-                                                    disabled={uploadingPdf[i]}
-                                                    className="block w-full text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-white dark:bg-gray-700 focus:outline-none file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900 dark:file:text-blue-200 hover:file:bg-blue-100 dark:hover:file:bg-blue-800"
-                                                />
-                                            </div>
-                                            {uploadingPdf[i] && (
-                                                <span className="text-sm text-blue-600 dark:text-blue-400">Uploading...</span>
-                                            )}
-                                        </div>
-
+                                        <input
+                                            type="text"
+                                            value={item.pdfUrl || ''}
+                                            onChange={e => updateResearch(i, 'pdfUrl', e.target.value)}
+                                            placeholder="https://... (link to PDF hosted elsewhere)"
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        />
                                         {item.pdfUrl && (
                                             <div className="mt-2 flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                                 <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
                                                     <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
                                                 </svg>
-                                                <span className="flex-1 text-sm text-gray-900 dark:text-white truncate">
-                                                    {item.pdfFilename || 'research.pdf'}
-                                                </span>
                                                 <a
-                                                    href={`http://localhost:5000${item.pdfUrl}`}
+                                                    href={item.pdfUrl}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                                                    className="flex-1 text-sm text-blue-600 dark:text-blue-400 hover:underline truncate"
                                                 >
-                                                    Download
+                                                    {item.pdfUrl}
                                                 </a>
-                                                <button
-                                                    onClick={() => deletePdf(i)}
-                                                    className="text-sm text-red-600 dark:text-red-400 hover:underline"
-                                                >
-                                                    Delete
-                                                </button>
                                             </div>
                                         )}
                                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                            Upload PDF (max 10MB) for users to download from the frontend
+                                            Enter URL to PDF hosted on GitHub, cloud storage, or other service
                                         </p>
                                     </div>
                                 </div>

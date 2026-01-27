@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSiteData } from '../context/SiteDataContext';
-import { apiCreateArticle, apiUpdateArticle, apiDeleteArticle, apiSearchArticles, apiSearchCategories, apiSaveSite } from '../utils/api';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import Card, { CardHeader, CardBody } from './components/Card';
@@ -12,19 +11,13 @@ export default function ContentEditor() {
   const { siteData, setSiteData } = useSiteData() || {};
   const toast = useToast();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [allCategories, setAllCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, published, draft
-  const [saving, setSaving] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
 
   const articles = useMemo(() => Array.isArray(siteData?.articles) ? siteData.articles : [], [siteData]);
+  const categories = useMemo(() => Array.isArray(siteData?.categories) ? siteData.categories : [], [siteData]);
   const current = articles[currentIndex] || {};
-
-  // Load categories
-  useEffect(() => {
-    apiSearchCategories({ limit: 100 }).then(res => setAllCategories(res.items || []));
-  }, []);
 
   // Filter articles
   const filteredArticles = useMemo(() => {
@@ -68,10 +61,10 @@ export default function ContentEditor() {
     }));
   }
 
-  async function addArticle() {
-    const token = localStorage.getItem('adminToken') || '';
+  function addArticle() {
     const uniq = Date.now();
-    const payload = {
+    const newArticle = {
+      _id: String(uniq),
       title: `New Article ${uniq}`,
       slug: `article-${uniq}`,
       category: '',
@@ -85,83 +78,44 @@ export default function ContentEditor() {
       published: false
     };
 
-    try {
-      const res = await apiCreateArticle(payload, token);
-      if (res && !res.error) {
-        setSiteData(d => ({ ...d, articles: [res, ...(d.articles || [])] }));
-        setCurrentIndex(0);
-        toast.success('Article created successfully!');
-      } else {
-        toast.error(res.error?.message || 'Failed to create article');
-      }
-    } catch (err) {
-      toast.error('Failed to create article');
-    }
+    setSiteData(d => ({ ...d, articles: [newArticle, ...(d.articles || [])] }));
+    setCurrentIndex(0);
+    toast.success('Article created successfully!');
   }
 
-  async function saveArticle() {
-    const token = localStorage.getItem('adminToken') || '';
-    const id = current._id || current.id;
-    if (!id) return;
-
-    setSaving(true);
-
+  function saveArticle() {
     // Auto-update date to today
     const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const articleToSave = { ...current, date: now };
 
-    try {
-      const res = await apiUpdateArticle(id, articleToSave, token);
-      if (res && !res.error) {
-        setSiteData(d => ({
-          ...d,
-          articles: d.articles.map((a, i) => i === currentIndex ? res : a)
-        }));
-        toast.success('Article saved!');
-      } else {
-        toast.error(res.error?.message || 'Failed to save article');
-      }
-    } catch (err) {
-      toast.error('Failed to save article');
-    } finally {
-      setSaving(false);
-    }
+    setSiteData(d => ({
+      ...d,
+      articles: d.articles.map((a, i) => i === currentIndex ? { ...a, date: now } : a)
+    }));
+
+    toast.success('Article saved!');
   }
 
-  async function publishArticle() {
+  function publishArticle() {
     update('published', true);
-    setTimeout(async () => {
-      await saveArticle();
+    setTimeout(() => {
+      saveArticle();
       toast.success('Article published!');
     }, 100);
   }
 
-  async function deleteArticle() {
-    const token = localStorage.getItem('adminToken') || '';
-    const id = current._id || current.id;
-    if (!id) return;
-
-    try {
-      const res = await apiDeleteArticle(id, token);
-      if (res && res.success) {
-        setSiteData(d => ({
-          ...d,
-          articles: d.articles.filter((_, i) => i !== currentIndex)
-        }));
-        setCurrentIndex(0);
-        setDeleteModal(false);
-        toast.success('Article deleted');
-      } else {
-        toast.error('Failed to delete article');
-      }
-    } catch (err) {
-      toast.error('Failed to delete article');
-    }
+  function deleteArticle() {
+    setSiteData(d => ({
+      ...d,
+      articles: d.articles.filter((_, i) => i !== currentIndex)
+    }));
+    setCurrentIndex(0);
+    setDeleteModal(false);
+    toast.success('Article deleted');
   }
 
-  async function promoteToHero() {
-    const token = localStorage.getItem('adminToken') || '';
+  function promoteToHero() {
     const newSlide = {
+      _id: String(Date.now()),
       tag: current.category || 'Featured',
       title: current.title,
       excerpt: current.excerpt,
@@ -169,15 +123,8 @@ export default function ContentEditor() {
       readTime: current.readTime
     };
 
-    const updatedSlides = [...(siteData.slides || []), newSlide];
-    setSiteData(d => ({ ...d, slides: updatedSlides }));
-
-    try {
-      await apiSaveSite({ ...siteData, slides: updatedSlides }, token);
-      toast.success('Promoted to hero slides!');
-    } catch {
-      toast.warning('Promoted locally. Remember to save all changes.');
-    }
+    setSiteData(d => ({ ...d, slides: [...(d.slides || []), newSlide] }));
+    toast.success('Promoted to hero slides!');
   }
 
   const colorOptions = ['blue', 'green', 'red', 'yellow', 'purple', 'pink', 'indigo', 'gray'];
@@ -347,8 +294,8 @@ export default function ContentEditor() {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     >
                       <option value="">Select category</option>
-                      {allCategories.map(cat => (
-                        <option key={cat._id || cat.id} value={cat.name}>{cat.name}</option>
+                      {categories.map(cat => (
+                        <option key={cat._id || cat.name} value={cat.name}>{cat.name}</option>
                       ))}
                     </select>
                   </div>
@@ -452,10 +399,10 @@ export default function ContentEditor() {
                   </Button>
 
                   <div className="flex gap-2">
-                    <Button variant="secondary" onClick={saveArticle} loading={saving}>
+                    <Button variant="secondary" onClick={saveArticle}>
                       Save Draft
                     </Button>
-                    <Button onClick={publishArticle} loading={saving}>
+                    <Button onClick={publishArticle}>
                       Publish
                     </Button>
                   </div>

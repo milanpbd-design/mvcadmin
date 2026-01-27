@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useSiteData } from '../context/SiteDataContext';
-import { apiCreateCategory, apiUpdateCategory, apiDeleteCategory } from '../utils/api';
 import Card, { CardHeader, CardBody } from './components/Card';
 import Button from './components/Button';
 import Modal, { ConfirmModal } from './components/Modal';
@@ -12,12 +11,12 @@ export default function CategoriesManager() {
   const [editModal, setEditModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(null);
-  const [saving, setSaving] = useState(false);
 
   const categories = siteData?.categories || [];
 
   function openEdit(category = null) {
     setCurrentCategory(category || {
+      _id: String(Date.now()),
       name: '',
       image: '',
       count: '',
@@ -31,65 +30,39 @@ export default function CategoriesManager() {
     setDeleteModal(true);
   }
 
-  async function saveCategory() {
-    const token = localStorage.getItem('adminToken') || '';
-    setSaving(true);
-
-    try {
-      if (currentCategory._id || currentCategory.id) {
-        // Update existing
-        const res = await apiUpdateCategory(currentCategory._id || currentCategory.id, currentCategory, token);
-        if (res && !res.error) {
-          setSiteData(d => ({
-            ...d,
-            categories: d.categories.map(c =>
-              (c._id || c.id) === (currentCategory._id || currentCategory.id) ? res : c
-            )
-          }));
-          toast.success('Category updated!');
-          setEditModal(false);
-        } else {
-          toast.error('Failed to update category');
-        }
-      } else {
-        // Create new
-        const res = await apiCreateCategory(currentCategory, token);
-        if (res && !res.error) {
-          setSiteData(d => ({
-            ...d,
-            categories: [res, ...(d.categories || [])]
-          }));
-          toast.success('Category created!');
-          setEditModal(false);
-        } else {
-          toast.error('Failed to create category');
-        }
-      }
-    } catch (err) {
-      toast.error('An error occurred');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function deleteCategory() {
-    const token = localStorage.getItem('adminToken') || '';
-    const id = currentCategory._id || currentCategory.id;
-
-    try {
-      if (id) {
-        await apiDeleteCategory(id, token);
-      }
-
+  function saveCategory() {
+    if (currentCategory._id || currentCategory.id) {
+      // Update existing
       setSiteData(d => ({
         ...d,
-        categories: d.categories.filter(c => (c._id || c.id) !== id)
+        categories: d.categories.map(c =>
+          (c._id || c.id) === (currentCategory._id || currentCategory.id) ? currentCategory : c
+        )
       }));
-      toast.success('Category deleted');
-      setDeleteModal(false);
-    } catch (err) {
-      toast.error('Failed to delete category');
+      toast.success('Category updated!');
+    } else {
+      // Create new
+      const newCategory = {
+        ...currentCategory,
+        _id: String(Date.now())
+      };
+      setSiteData(d => ({
+        ...d,
+        categories: [newCategory, ...(d.categories || [])]
+      }));
+      toast.success('Category created!');
     }
+    setEditModal(false);
+  }
+
+  function deleteCategory() {
+    const id = currentCategory._id || currentCategory.id;
+    setSiteData(d => ({
+      ...d,
+      categories: d.categories.filter(c => (c._id || c.id) !== id)
+    }));
+    toast.success('Category deleted');
+    setDeleteModal(false);
   }
 
   return (
@@ -171,7 +144,7 @@ export default function CategoriesManager() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setEditModal(false)}>Cancel</Button>
-            <Button onClick={saveCategory} loading={saving}>Save</Button>
+            <Button onClick={saveCategory}>Save</Button>
           </>
         }
       >
