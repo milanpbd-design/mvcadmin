@@ -1,14 +1,17 @@
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  
-  # Don't rewrite files or directories
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-l
-  
-  # Rewrite everything else to index.html
-  RewriteRule . /index.html [L]
+# Hostinger-compatible .htaccess for React SPA
+RewriteEngine On
+RewriteBase /
+
+# Serve index.html for all routes except existing files
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
+
+# Security headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
 </IfModule>
 
 # Enable GZIP compression
@@ -28,3 +31,9 @@
   ExpiresByType application/javascript "access plus 1 month"
   ExpiresByType application/json "access plus 1 week"
 </IfModule>
+
+# Prevent directory browsing
+Options -Indexes
+
+# Set default charset
+AddDefaultCharset UTF-8
