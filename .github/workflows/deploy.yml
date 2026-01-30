@@ -37,9 +37,13 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: .dist/  # Deploy only the built files
+          local-dir: .dist/
           server-dir: /domains/myvetcorner.com/public_html/
-          dangerous-clean-slate: false  # Don't delete existing files
+          dangerous-clean-slate: true
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
       
       - name: Deployment complete
         run: |
