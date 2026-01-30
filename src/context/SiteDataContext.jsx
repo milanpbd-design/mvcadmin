@@ -1,82 +1,112 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import defaultData from "../data";
+import {
+  articlesService,
+  researchService,
+  categoriesService,
+  mediaService,
+  slidesService,
+  siteConfigService,
+  commentsService,
+  usersService,
+  subscribeToTable
+} from "../services/supabaseService";
 
 const SiteDataContext = createContext();
 
 /**
- * Load content from static JSON files in public/content/
+ * Load all content from Supabase
  */
-async function loadContentFromJSON() {
+async function loadContentFromSupabase() {
   try {
     const [
       articles,
       research,
-      experts,
       categories,
       media,
       slides,
-      users,
       comments,
+      users,
       siteConfig
     ] = await Promise.all([
-      fetch('/content/articles.json').then(r => r.json()).catch(() => []),
-      fetch('/content/research.json').then(r => r.json()).catch(() => []),
-      fetch('/content/experts.json').then(r => r.json()).catch(() => []),
-      fetch('/content/categories.json').then(r => r.json()).catch(() => []),
-      fetch('/content/media.json').then(r => r.json()).catch(() => []),
-      fetch('/content/slides.json').then(r => r.json()).catch(() => []),
-      fetch('/content/users.json').then(r => r.json()).catch(() => []),
-      fetch('/content/comments.json').then(r => r.json()).catch(() => []),
-      fetch('/content/site-config.json').then(r => r.json()).catch(() => ({})),
+      articlesService.fetchPublished().catch(() => []),
+      researchService.fetchAll().catch(() => []),
+      categoriesService.fetchAll().catch(() => []),
+      mediaService.fetchAll().catch(() => []),
+      slidesService.fetchActive().catch(() => []),
+      commentsService.fetchAll().catch(() => []),
+      usersService.fetchAll().catch(() => []),
+      siteConfigService.fetch().catch(() => null)
     ]);
 
+    // Merge with site config or use defaults
     return {
-      ...siteConfig,
+      ...defaultData,
+      ...(siteConfig || {}),
       articles,
       research,
-      experts,
       categories,
       media,
       slides,
-      users,
       comments,
+      users
     };
   } catch (error) {
-    console.error('Failed to load content from JSON:', error);
+    console.error('Failed to load content from Supabase:', error);
     return defaultData; // Fallback to default data
   }
 }
 
 export function SiteDataProvider({ children }) {
-  const [siteData, setSiteData] = useState(() => {
-    // Try localStorage first for admin edits
-    const stored = localStorage.getItem("vetCornerData");
-    return stored ? JSON.parse(stored) : defaultData;
-  });
-
+  const [siteData, setSiteData] = useState(defaultData);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Load content from static JSON files on mount
+  // Load content from Supabase on mount
   useEffect(() => {
-    loadContentFromJSON().then(data => {
-      // Merge with localStorage (localStorage takes priority for admin edits)
-      const stored = localStorage.getItem("vetCornerData");
-      if (stored) {
-        const localData = JSON.parse(stored);
-        setSiteData({ ...data, ...localData });
-      } else {
+    loadContentFromSupabase()
+      .then(data => {
         setSiteData(data);
-      }
-      setLoading(false);
-    });
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error loading data:', err);
+        setError(err.message);
+        setLoading(false);
+      });
   }, []);
 
-  // Save to localStorage when data changes (for admin panel editing)
+  // Subscribe to real-time updates for articles
   useEffect(() => {
-    if (!loading) {
-      localStorage.setItem("vetCornerData", JSON.stringify(siteData));
+    const unsubscribe = subscribeToTable('articles', (payload) => {
+      console.log('Article change detected:', payload);
+      // Reload articles when changes occur
+      articlesService.fetchPublished().then(articles => {
+        setSiteData(prev => ({ ...prev, articles }));
+      });
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Method to reload data manually
+  const reloadData = async () => {
+    setLoading(true);
+    try {
+      const data = await loadContentFromSupabase();
+      setSiteData(data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error reloading data:', err);
+      setError(err.message);
+      setLoading(false);
     }
-  }, [siteData, loading]);
+  };
+
+  // Method to update site data (for admin panel)
+  const updateSiteData = (updates) => {
+    setSiteData(prev => ({ ...prev, ...updates }));
+  };
 
   if (loading) {
     return (
@@ -86,15 +116,23 @@ export function SiteDataProvider({ children }) {
         alignItems: 'center',
         minHeight: '100vh',
         fontSize: '1.2rem',
-        color: '#666'
+        color: '#666',
+        flexDirection: 'column',
+        gap: '1rem'
       }}>
-        Loading...
+        <div>Loading from Supabase...</div>
+        {error && <div style={{ color: '#ef4444', fontSize: '0.9rem' }}>Error: {error}</div>}
       </div>
     );
   }
 
   return (
-    <SiteDataContext.Provider value={{ siteData, setSiteData }}>
+    <SiteDataContext.Provider value={{
+      siteData,
+      setSiteData: updateSiteData,
+      reloadData,
+      error
+    }}>
       {children}
     </SiteDataContext.Provider>
   );

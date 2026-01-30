@@ -1,26 +1,46 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSiteData } from '../context/SiteDataContext';
+import { useAuth } from '../context/AuthContext';
+import { categoriesService } from '../services/supabaseService';
 import Card, { CardHeader, CardBody } from './components/Card';
 import Button from './components/Button';
 import Modal, { ConfirmModal } from './components/Modal';
 import { useToast } from './components/Toast';
 
 export default function CategoriesManager() {
-  const { siteData, setSiteData } = useSiteData() || {};
+  const { reloadData } = useSiteData() || {};
+  const { user } = useAuth();
   const toast = useToast();
   const [editModal, setEditModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
 
-  const categories = siteData?.categories || [];
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  async function loadCategories() {
+    try {
+      setLoading(true);
+      const data = await categoriesService.fetchAll();
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      toast.error('Failed to load categories');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function openEdit(category = null) {
     setCurrentCategory(category || {
-      _id: String(Date.now()),
       name: '',
       image: '',
       count: '',
-      slug: ''
+      hero_image: '',
+      description: ''
     });
     setEditModal(true);
   }
@@ -30,39 +50,57 @@ export default function CategoriesManager() {
     setDeleteModal(true);
   }
 
-  function saveCategory() {
-    if (currentCategory._id || currentCategory.id) {
-      // Update existing
-      setSiteData(d => ({
-        ...d,
-        categories: d.categories.map(c =>
-          (c._id || c.id) === (currentCategory._id || currentCategory.id) ? currentCategory : c
-        )
-      }));
-      toast.success('Category updated!');
-    } else {
-      // Create new
-      const newCategory = {
-        ...currentCategory,
-        _id: String(Date.now())
-      };
-      setSiteData(d => ({
-        ...d,
-        categories: [newCategory, ...(d.categories || [])]
-      }));
-      toast.success('Category created!');
+  async function saveCategory() {
+    try {
+      setLoading(true);
+
+      if (currentCategory.id) {
+        // Update existing
+        const updated = await categoriesService.update(currentCategory.id, currentCategory);
+        setCategories(prev => prev.map(c => c.id === updated.id ? updated : c));
+        toast.success('Category updated!');
+      } else {
+        // Create new
+        const created = await categoriesService.create(currentCategory);
+        setCategories(prev => [created, ...prev]);
+        toast.success('Category created!');
+      }
+
+      await reloadData();
+      setEditModal(false);
+    } catch (error) {
+      console.error('Failed to save category:', error);
+      toast.error('Failed to save category');
+    } finally {
+      setLoading(false);
     }
-    setEditModal(false);
   }
 
-  function deleteCategory() {
-    const id = currentCategory._id || currentCategory.id;
-    setSiteData(d => ({
-      ...d,
-      categories: d.categories.filter(c => (c._id || c.id) !== id)
-    }));
-    toast.success('Category deleted');
-    setDeleteModal(false);
+  async function deleteCategory() {
+    try {
+      setLoading(true);
+      await categoriesService.delete(currentCategory.id);
+      setCategories(prev => prev.filter(c => c.id !== currentCategory.id));
+      await reloadData();
+      toast.success('Category deleted');
+      setDeleteModal(false);
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+      toast.error('Failed to delete category');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading && categories.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading categories...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -72,7 +110,7 @@ export default function CategoriesManager() {
           title="Categories"
           subtitle={`${categories.length} total categories`}
           action={
-            <Button onClick={() => openEdit()} icon={
+            <Button onClick={() => openEdit()} disabled={loading} icon={
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
@@ -97,7 +135,7 @@ export default function CategoriesManager() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((cat, i) => (
-            <Card key={cat._id || cat.id || i} hover className="group">
+            <Card key={cat.id || i} hover className="group">
               <div className="aspect-video relative rounded-lg overflow-hidden mb-4">
                 {cat.image ? (
                   <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" />
@@ -139,12 +177,14 @@ export default function CategoriesManager() {
       <Modal
         isOpen={editModal}
         onClose={() => setEditModal(false)}
-        title={currentCategory?._id || currentCategory?.id ? 'Edit Category' : 'New Category'}
+        title={currentCategory?.id ? 'Edit Category' : 'New Category'}
         size="md"
         footer={
           <>
             <Button variant="ghost" onClick={() => setEditModal(false)}>Cancel</Button>
-            <Button onClick={saveCategory}>Save</Button>
+            <Button onClick={saveCategory} disabled={loading}>
+              {loading ? 'Saving...' : 'Save'}
+            </Button>
           </>
         }
       >
@@ -172,6 +212,17 @@ export default function CategoriesManager() {
             {currentCategory?.image && (
               <img src={currentCategory.image} alt="Preview" className="mt-2 w-full h-40 object-cover rounded-lg" />
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hero Image URL</label>
+            <input
+              type="text"
+              value={currentCategory?.hero_image || ''}
+              onChange={e => setCurrentCategory({ ...currentCategory, hero_image: e.target.value })}
+              placeholder="https://... (for category page header)"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+            />
           </div>
 
           <div>

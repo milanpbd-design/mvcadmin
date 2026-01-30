@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSiteData } from '../context/SiteDataContext';
+import { useAuth } from '../context/AuthContext';
+import { articlesService, slidesService } from '../services/supabaseService';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import Card, { CardHeader, CardBody } from './components/Card';
@@ -8,22 +10,41 @@ import { ConfirmModal } from './components/Modal';
 import { useToast } from './components/Toast';
 
 export default function ContentEditor() {
-  const { siteData, setSiteData } = useSiteData() || {};
+  const { siteData, reloadData } = useSiteData() || {};
+  const { user } = useAuth();
   const toast = useToast();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all'); // all, published, draft
+  const [filterStatus, setFilterStatus] = useState('all');
   const [deleteModal, setDeleteModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [articles, setArticles] = useState([]);
 
-  const articles = useMemo(() => Array.isArray(siteData?.articles) ? siteData.articles : [], [siteData]);
   const categories = useMemo(() => Array.isArray(siteData?.categories) ? siteData.categories : [], [siteData]);
   const current = articles[currentIndex] || {};
+
+  // Load all articles (including drafts) for admin
+  useEffect(() => {
+    loadArticles();
+  }, []);
+
+  async function loadArticles() {
+    try {
+      setLoading(true);
+      const data = await articlesService.fetchAll();
+      setArticles(data || []);
+    } catch (error) {
+      console.error('Failed to load articles:', error);
+      toast.error('Failed to load articles');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // Filter articles
   const filteredArticles = useMemo(() => {
     let filtered = [...articles];
 
-    // Filter by search
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(a =>
@@ -33,7 +54,6 @@ export default function ContentEditor() {
       );
     }
 
-    // Filter by status
     if (filterStatus === 'published') {
       filtered = filtered.filter(a => a.published);
     } else if (filterStatus === 'draft') {
@@ -43,91 +63,142 @@ export default function ContentEditor() {
     return filtered;
   }, [articles, searchQuery, filterStatus]);
 
-  function update(field, value) {
-    setSiteData(d => ({
-      ...d,
-      articles: d.articles.map((a, i) => {
-        if (i !== currentIndex) return a;
-        const next = { ...a, [field]: value };
+  function updateLocal(field, value) {
+    setArticles(prev => prev.map((a, i) => {
+      if (i !== currentIndex) return a;
+      const next = { ...a, [field]: value };
 
-        // Auto-calculate read time
-        if (field === 'content') {
-          const words = (value || '').replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(Boolean).length;
-          next.readTime = `${Math.max(1, Math.ceil(words / 200))} min read`;
-        }
+      // Auto-calculate read time
+      if (field === 'content') {
+        const words = (value || '').replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(Boolean).length;
+        next.read_time = `${Math.max(1, Math.ceil(words / 200))} min read`;
+      }
 
-        return next;
-      })
+      return next;
     }));
   }
 
-  function addArticle() {
-    const uniq = Date.now();
-    const newArticle = {
-      _id: String(uniq),
-      title: `New Article ${uniq}`,
-      slug: `article-${uniq}`,
-      category: '',
-      categoryColor: 'blue',
-      content: '',
-      excerpt: '',
-      image: '',
-      readTime: '1 min read',
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      featured: false,
-      published: false
-    };
+  async function addArticle() {
+    try {
+      setLoading(true);
+      const newArticle = {
+        title: `New Article ${Date.now()}`,
+        slug: `article-${Date.now()}`,
+        category: '',
+        content: '',
+        excerpt: '',
+        image: '',
+        read_time: '1 min read',
+        date: new Date().toISOString().split('T')[0],
+        author_id: user?.id,
+        featured: false,
+        published: false
+      };
 
-    setSiteData(d => ({ ...d, articles: [newArticle, ...(d.articles || [])] }));
-    setCurrentIndex(0);
-    toast.success('Article created successfully!');
+      const created = await articlesService.create(newArticle);
+      setArticles(prev => [created, ...prev]);
+      setCurrentIndex(0);
+      toast.success('Article created successfully!');
+    } catch (error) {
+      console.error('Failed to create article:', error);
+      toast.error('Failed to create article');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function saveArticle() {
-    // Auto-update date to today
-    const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  async function saveArticle() {
+    try {
+      setLoading(true);
+      const updated = await articlesService.update(current.id, {
+        ...current,
+        date: new Date().toISOString().split('T')[0]
+      });
 
-    setSiteData(d => ({
-      ...d,
-      articles: d.articles.map((a, i) => i === currentIndex ? { ...a, date: now } : a)
-    }));
-
-    toast.success('Article saved!');
+      setArticles(prev => prev.map(a => a.id === updated.id ? updated : a));
+      await reloadData(); // Refresh site data
+      toast.success('Article saved!');
+    } catch (error) {
+      console.error('Failed to save article:', error);
+      toast.error('Failed to save article');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function publishArticle() {
-    update('published', true);
-    setTimeout(() => {
-      saveArticle();
+  async function publishArticle() {
+    try {
+      setLoading(true);
+      const updated = await articlesService.update(current.id, {
+        ...current,
+        published: true,
+        date: new Date().toISOString().split('T')[0]
+      });
+
+      setArticles(prev => prev.map(a => a.id === updated.id ? updated : a));
+      await reloadData();
       toast.success('Article published!');
-    }, 100);
+    } catch (error) {
+      console.error('Failed to publish article:', error);
+      toast.error('Failed to publish article');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function deleteArticle() {
-    setSiteData(d => ({
-      ...d,
-      articles: d.articles.filter((_, i) => i !== currentIndex)
-    }));
-    setCurrentIndex(0);
-    setDeleteModal(false);
-    toast.success('Article deleted');
+  async function deleteArticle() {
+    try {
+      setLoading(true);
+      await articlesService.delete(current.id);
+      setArticles(prev => prev.filter(a => a.id !== current.id));
+      setCurrentIndex(0);
+      setDeleteModal(false);
+      await reloadData();
+      toast.success('Article deleted');
+    } catch (error) {
+      console.error('Failed to delete article:', error);
+      toast.error('Failed to delete article');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function promoteToHero() {
-    const newSlide = {
-      _id: String(Date.now()),
-      tag: current.category || 'Featured',
-      title: current.title,
-      excerpt: current.excerpt,
-      image: current.image,
-      readTime: current.readTime
-    };
+  async function promoteToHero() {
+    try {
+      setLoading(true);
+      const newSlide = {
+        tag: current.category || 'Featured',
+        title: current.title,
+        excerpt: current.excerpt,
+        image: current.image,
+        read_time: current.read_time,
+        order: 0,
+        active: true
+      };
 
-    setSiteData(d => ({ ...d, slides: [...(d.slides || []), newSlide] }));
-    toast.success('Promoted to hero slides!');
+      await slidesService.create(newSlide);
+      await reloadData();
+      toast.success('Promoted to hero slides!');
+    } catch (error) {
+      console.error('Failed to promote to hero:', error);
+      toast.error('Failed to promote to hero');
+    } finally {
+      setLoading(false);
+    }
   }
 
   const colorOptions = ['blue', 'green', 'red', 'yellow', 'purple', 'pink', 'indigo', 'gray'];
+
+  if (loading && articles.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading articles...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-12 gap-6">
@@ -138,7 +209,7 @@ export default function ContentEditor() {
             title="Articles"
             subtitle={`${filteredArticles.length} total`}
             action={
-              <Button size="sm" onClick={addArticle} icon={
+              <Button size="sm" onClick={addArticle} disabled={loading} icon={
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
@@ -198,7 +269,7 @@ export default function ContentEditor() {
                   const actualIndex = articles.indexOf(article);
                   return (
                     <button
-                      key={article._id || i}
+                      key={article.id || i}
                       onClick={() => setCurrentIndex(actualIndex)}
                       className={`w-full text-left p-3 rounded-lg transition ${actualIndex === currentIndex
                         ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
@@ -251,7 +322,7 @@ export default function ContentEditor() {
                     type="text"
                     placeholder="Article Title"
                     value={current.title || ''}
-                    onChange={e => update('title', e.target.value)}
+                    onChange={e => updateLocal('title', e.target.value)}
                     className="text-2xl font-bold w-full bg-transparent border-none outline-none text-gray-900 dark:text-white"
                   />
                   <div className="flex items-center gap-2 mt-2">
@@ -290,47 +361,23 @@ export default function ContentEditor() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
                     <select
                       value={current.category || ''}
-                      onChange={e => update('category', e.target.value)}
+                      onChange={e => updateLocal('category', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     >
                       <option value="">Select category</option>
                       {categories.map(cat => (
-                        <option key={cat._id || cat.name} value={cat.name}>{cat.name}</option>
+                        <option key={cat.id || cat.name} value={cat.name}>{cat.name}</option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category Color</label>
-                    <select
-                      value={current.categoryColor || 'blue'}
-                      onChange={e => update('categoryColor', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      {colorOptions.map(c => (
-                        <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Slug</label>
                     <input
                       type="text"
-                      value={current.date || ''}
-                      onChange={e => update('date', e.target.value)}
-                      placeholder="Dec 15, 2024"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Read Time</label>
-                    <input
-                      type="text"
-                      value={current.readTime || ''}
-                      onChange={e => update('readTime', e.target.value)}
-                      placeholder="5 min read"
+                      value={current.slug || ''}
+                      onChange={e => updateLocal('slug', e.target.value)}
+                      placeholder="article-slug"
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -340,7 +387,7 @@ export default function ContentEditor() {
                     <input
                       type="text"
                       value={current.image || ''}
-                      onChange={e => update('image', e.target.value)}
+                      onChange={e => updateLocal('image', e.target.value)}
                       placeholder="https://..."
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
@@ -353,7 +400,7 @@ export default function ContentEditor() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Excerpt</label>
                     <textarea
                       value={current.excerpt || ''}
-                      onChange={e => update('excerpt', e.target.value)}
+                      onChange={e => updateLocal('excerpt', e.target.value)}
                       rows={3}
                       placeholder="Brief article summary..."
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -371,7 +418,7 @@ export default function ContentEditor() {
                   <ReactQuill
                     theme="snow"
                     value={current.content || ''}
-                    onChange={val => update('content', val)}
+                    onChange={val => updateLocal('content', val)}
                     className="h-full bg-white dark:bg-gray-700"
                     modules={{
                       toolbar: [
@@ -394,16 +441,16 @@ export default function ContentEditor() {
             <Card>
               <CardBody>
                 <div className="flex justify-between items-center">
-                  <Button variant="ghost" size="sm" onClick={promoteToHero}>
+                  <Button variant="ghost" size="sm" onClick={promoteToHero} disabled={loading}>
                     ⭐ Promote to Hero
                   </Button>
 
                   <div className="flex gap-2">
-                    <Button variant="secondary" onClick={saveArticle}>
-                      Save Draft
+                    <Button variant="secondary" onClick={saveArticle} disabled={loading}>
+                      {loading ? 'Saving...' : 'Save Draft'}
                     </Button>
-                    <Button onClick={publishArticle}>
-                      Publish
+                    <Button onClick={publishArticle} disabled={loading}>
+                      {loading ? 'Publishing...' : 'Publish'}
                     </Button>
                   </div>
                 </div>

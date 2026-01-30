@@ -4,6 +4,7 @@ import Page from './pages/Page';
 import CategoryHub from './pages/CategoryHub';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
+import ProtectedRoute from './admin/ProtectedRoute';
 import AboutUs from './pages/AboutUs';
 import ContactUs from './pages/ContactUs';
 import MedicalReviewBoard from './pages/MedicalReviewBoard';
@@ -40,7 +41,7 @@ export default function Router() {
       <Route path="/disclaimer" element={<LegalPage title="Disclaimer" />} />
 
       <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/admin/*" element={<AdminApp />} />
+      <Route path="/admin/*" element={<ProtectedRoute><AdminApp /></ProtectedRoute>} />
       <Route path="/:slug" element={<Page />} />
     </Routes>
   );

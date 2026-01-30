@@ -1,22 +1,25 @@
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import Router from './Router';
-import reportWebVitals from './reportWebVitals';
+import { BrowserRouter } from 'react-router-dom';
 import { SiteDataProvider } from './context/SiteDataContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
+import Router from './Router';
+import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <SiteDataProvider>
-      <ThemeProvider>
-        <BrowserRouter>
-          <Router />
-        </BrowserRouter>
-      </ThemeProvider>
-    </SiteDataProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <ThemeProvider>
+          <SiteDataProvider>
+            <Router />
+          </SiteDataProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
 
